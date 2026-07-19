@@ -11,6 +11,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define HASH_TABLE_LOAD_FACTOR_LIMIT 0.75
+#define HASH_TABLE_GROWTH_FACTOR 2
+
+static unsigned long hash_string(const char *key)
+{
+    unsigned long hash = 5381;
+    int c;
+
+    while ((c = (unsigned char)*key++) != 0) {
+        hash = ((hash << 5) + hash) + (unsigned long)c;
+    }
+
+    return hash;
+}
+
 static HashNode *node_create(const char *key)
 {
     HashNode *node = malloc(sizeof(HashNode));
@@ -78,4 +93,41 @@ void hash_table_destroy(HashTable *table)
 
     free(table->buckets);
     free(table);
+}
+
+double hash_table_load_factor(const HashTable *table)
+{
+    return (double)table->size / (double)table->capacity;
+}
+
+bool hash_table_insert(HashTable *table, const char *key, size_t *out_count)
+{
+    HashNode *existing = hash_table_find(table, key);
+    if (existing) {
+        existing->count += 1;
+        if (out_count) {
+            *out_count = existing->count;
+        }
+        return true;
+    }
+
+    HashNode *node = node_create(key);
+    if (!node) {
+        return false;
+    }
+
+    if (hash_table_load_factor(table) >= HASH_TABLE_LOAD_FACTOR_LIMIT) {
+        hash_table_rebuild(table, table->capacity * HASH_TABLE_GROWTH_FACTOR);
+    }
+
+    size_t index = hash_string(key) % table->capacity;
+    node->next = table->buckets[index];
+    table->buckets[index] = node;
+    table->size += 1;
+
+    if (out_count) {
+        *out_count = node->count;
+    }
+
+    return true;
 }
