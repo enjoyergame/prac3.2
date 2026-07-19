@@ -1,0 +1,2 @@
+add_executable(test_hash_table test_hash_table.c)
+target_link_libraries(test_hash_table PRIVATE hashtable_static)
