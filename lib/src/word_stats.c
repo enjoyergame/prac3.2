@@ -54,3 +54,45 @@ bool word_stats_process_file(HashTable *table, const char *filepath, size_t *out
 
     return true;
 }
+
+static int compare_word_count_desc(const void *a, const void *b)
+{
+    const WordCount *wa = a;
+    const WordCount *wb = b;
+
+    if (wb->count != wa->count) {
+        return (wa->count < wb->count) ? 1 : -1;
+    }
+    return strcmp(wa->word, wb->word);
+}
+
+size_t word_stats_top_n(const HashTable *table, WordCount *out_array, size_t n)
+{
+    if (table->size == 0 || n == 0) {
+        return 0;
+    }
+
+    WordCount *all = malloc(table->size * sizeof(WordCount));
+    if (!all) {
+        return 0;
+    }
+
+    size_t index = 0;
+    for (size_t i = 0; i < table->capacity; ++i) {
+        for (HashNode *node = table->buckets[i]; node; node = node->next) {
+            all[index].word = node->key;
+            all[index].count = node->count;
+            index += 1;
+        }
+    }
+
+    qsort(all, table->size, sizeof(WordCount), compare_word_count_desc);
+
+    size_t result_count = (n < table->size) ? n : table->size;
+    for (size_t i = 0; i < result_count; ++i) {
+        out_array[i] = all[i];
+    }
+
+    free(all);
+    return result_count;
+}
