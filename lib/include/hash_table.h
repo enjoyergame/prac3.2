@@ -11,14 +11,16 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef struct HashNode {
+typedef struct HashNode
+{
     char *key;
     size_t count;
     struct HashNode *next;
 } HashNode;
 
-typedef struct HashTable {
-    HashNode **buckets;
+typedef struct HashTable
+{
+    HashNode **buckets; // массив указателей на ноды в указателях лежат списки нод
     size_t capacity;
     size_t size;
 } HashTable;

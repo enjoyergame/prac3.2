@@ -160,7 +160,7 @@ HashNode *hash_table_find(const HashTable *table, const char *key) // поиск
 
 bool hash_table_insert(HashTable *table, const char *key, size_t *out_count)
 {
-    HashNode *existing = hash_table_find(table, key);
+    HashNode *existing = hash_table_find(table, key); // вдруг ключ уже есть
     if (existing)
     {
         existing->count += 1;
@@ -171,21 +171,21 @@ bool hash_table_insert(HashTable *table, const char *key, size_t *out_count)
         return true;
     }
 
-    HashNode *node = node_create(key);
+    HashNode *node = node_create(key); // создаем и проверяем ноду
     if (!node)
     {
         return false;
     }
 
-    if (hash_table_load_factor(table) >= HASH_TABLE_LOAD_FACTOR_LIMIT)
+    if (hash_table_load_factor(table) >= HASH_TABLE_LOAD_FACTOR_LIMIT) // не переполнена ли таблица
     {
         hash_table_rebuild(table, table->capacity * HASH_TABLE_GROWTH_FACTOR);
     }
 
-    size_t index = hash_string(key) % table->capacity;
-    node->next = table->buckets[index];
-    table->buckets[index] = node;
-    table->size += 1;
+    size_t index = hash_string(key) % table->capacity; // вычисляем индекс
+    node->next = table->buckets[index];                // берем указатель на старую ноду которая лежала в этом индексе
+    table->buckets[index] = node;                      // кладем сюда новую
+    table->size += 1;                                  // увеличиваем размер таблицы на один
 
     if (out_count)
     {
@@ -203,20 +203,21 @@ bool hash_table_remove(HashTable *table, const char *key)
 
     while (node)
     {
-        if (strcmp(node->key, key) == 0)
+        if (strcmp(node->key, key) == 0) // если нашли
         {
-            if (prev)
+            if (prev) // если что то до ноды было
             {
                 prev->next = node->next;
             }
             else
             {
-                table->buckets[index] = node->next;
+                table->buckets[index] = node->next; // просто кладем в тот индекс следующую ноду
             }
             node_destroy(node);
             table->size -= 1;
             return true;
         }
+        // идем дальше
         prev = node;
         node = node->next;
     }
